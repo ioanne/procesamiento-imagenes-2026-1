@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Background Remover</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: system-ui, sans-serif;
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  h1 { margin-bottom: 0.25rem; }
+  .sub { color: white; margin-top: 0; }
+  fieldset { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; }
+  label { display: inline-block; margin-right: 1rem; }
+  .controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+  button {
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    border: 1px solid #666;
+    cursor: pointer;
+    background: #3936e1;
+    color: white
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .preview {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .preview figure { margin: 0; text-align: center; }
+  .checker {
+    background-image:
+      linear-gradient(45deg, #ccc 25%, transparent 25%),
+      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #ccc 75%),
+      linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, 10px 0;
+    padding: 8px;
+    border-radius: 6px;
+  }
+  img, canvas { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  input[type="range"] { vertical-align: middle; }
+</style>
+</head>
+<body>
+  <h1>Background Remover</h1>
+  <p class="sub">Volvé transparente el fondo blanco o negro de una imagen, todo en el navegador.</p>
+
+  <fieldset>
+    <div class="controls">
+      <label>Imagen:
+        <input type="file" id="file" accept="image/*" />
+      </label>
+      <label>Fondo:
+        <select id="mode">
+          <option value="white">Blanco</option>
+          <option value="black">Negro</option>
+        </select>
+      </label>
+      <label>Tolerancia:
+        <input type="range" id="tolerance" min="0" max="200" value="30" />
+        <span id="tolVal">30</span>
+      </label>
+      <button id="process" disabled>Procesar</button>
+      <button id="download" disabled>Descargar PNG</button>
+    </div>
+  </fieldset>
+
+  <div class="preview">
+    <figure>
+      <figcaption>Original</figcaption>
+      <img id="original" alt="Sin imagen" />
+    </figure>
+    <figure>
+      <figcaption>Resultado</figcaption>
+      <div class="checker"><img id="result" alt="Sin resultado aún" /></div>
+    </figure>
+  </div>
+
+<script>
+  const fileInput = document.getElementById('file');
+  const modeInput = document.getElementById('mode');
+  const tolInput = document.getElementById('tolerance');
+  const tolVal = document.getElementById('tolVal');
+  const processBtn = document.getElementById('process');
+  const downloadBtn = document.getElementById('download');
+  const originalImg = document.getElementById('original');
+  const resultImg = document.getElementById('result');
+
+  let resultBlobUrl = null;
+
+  tolInput.addEventListener('input', () => tolVal.textContent = tolInput.value);
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    originalImg.src = URL.createObjectURL(file);
+    processBtn.disabled = false;
+  });
+
+  processBtn.addEventListener('click', async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    processBtn.disabled = true;
+    processBtn.textContent = 'Procesando...';
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('mode', modeInput.value);
+    formData.append('tolerance', tolInput.value);
+
+    try {
+      const response = await fetch('/remove-background', { method: 'POST', body: formData });
+      if (!response.ok) throw new Error(await response.text());
+      const blob = await response.blob();
+      if (resultBlobUrl) URL.revokeObjectURL(resultBlobUrl);
+      resultBlobUrl = URL.createObjectURL(blob);
+      resultImg.src = resultBlobUrl;
+      downloadBtn.disabled = false;
+    } catch (err) {
+      alert('Error: ' + err.message);
+    } finally {
+      processBtn.disabled = false;
+      processBtn.textContent = 'Procesar';
+    }
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    if (!resultBlobUrl) return;
+    const a = document.createElement('a');
+    a.href = resultBlobUrl;
+    a.download = 'sin_fondo.png';
+    a.click();
+  });
+</script>
+</body>
+</html>

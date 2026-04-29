@@ -82,5 +82,13 @@ editor_imagen.brillo(1).contraste(2).desenfoque().save("pepe.jpg")
 """
 editor_imagen = Editor("naranja.jpg")
 editor_imagen.brillo(1).contraste(2).suavizado(3).save("naranja_editado.jpg")
+editor_imagen(
+    {
+        "brillo": 1,
+        "contraste": 2,
+        "suavizado": 3,
+        "desenfoque": true
+    }
+).save("nueva_imagen.jpg")
 
 """
