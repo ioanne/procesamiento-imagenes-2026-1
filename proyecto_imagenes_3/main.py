@@ -1,5 +1,5 @@
 from PIL import Image, ImageFilter
 
-image = Image.open('naranja.jpg')
+image = Image.open('proyecto_imagenes_3/naranja.jpg')
 
-image.filter(ImageFilter.BLUR).save('naranja_blur.jpg')
+image.filter(ImageFilter.BLUR).save('proyecto_imagenes_3/naranja_blur.jpg')
